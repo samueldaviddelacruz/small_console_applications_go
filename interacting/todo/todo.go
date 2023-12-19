@@ -30,6 +30,22 @@ func (l *List) Add(task string) {
 	*l = append(*l, t)
 }
 
+// String prints out a formatted list
+// Implements the fmt.Stringer interface
+func (l *List) String() string {
+	formatted := ""
+	for k, t := range *l {
+		prefix := "  "
+		if t.Done {
+			prefix = "X "
+		}
+
+		// adjust the item number k to print numbers starting from 1 instead of 0
+		formatted += fmt.Sprintf("%s%d: %s\n", prefix, k+1, t.Task)
+	}
+	return formatted
+}
+
 // Complete method marks a todo item as completed by
 // setting Done = true and CompletedAt to the current time
 func (l *List) Complete(i int) error {
