@@ -45,6 +45,28 @@ func (l *List) String() string {
 	}
 	return formatted
 }
+func (l *List) Print(verbose bool, hideComplete bool) {
+	formatted := ""
+	for k, t := range *l {
+		prefix := "  "
+		if t.Done {
+			prefix = "X "
+			if hideComplete {
+				continue
+			}
+		}
+		// adjust the item number k to print numbers starting from 1 instead of 0
+		formatted += fmt.Sprintf("%s%d: %s\n", prefix, k+1, t.Task)
+		if verbose {
+			if t.Done {
+				formatted += fmt.Sprintf(" Completed At: %s\n", t.CompletedAt.Format("Mon Jan 2 15:04:05"))
+			} else {
+				formatted += fmt.Sprintf(" Created At: %s\n", t.CreatedAt.Format("Mon Jan 2 15:04:05"))
+			}
+		}
+	}
+	print(formatted)
+}
 
 // Complete method marks a todo item as completed by
 // setting Done = true and CompletedAt to the current time
