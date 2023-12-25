@@ -6,9 +6,26 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
+	"runtime"
+	"time"
 
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
+)
+
+const (
+	defaultTemplate = `<!DOCTYPE html>
+	<html>
+	  <head>
+	    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+		<title>{{ .Title}}</title>
+		</head>
+		 <body>
+		 {{ .Body }}
+		</body>
+	</html>
+		`
 )
 
 const (
@@ -26,6 +43,7 @@ const (
 func main() {
 	// Parse flags
 	filename := flag.String("file", "", "Markdown file to preview")
+	skipPreview := flag.Bool("s", false, "Skip opening the preview in the browser")
 	flag.Parse()
 	// if user did not provide input file, show usage
 
@@ -33,13 +51,13 @@ func main() {
 		flag.Usage()
 		os.Exit(1)
 	}
-	if err := run(*filename, os.Stdout); err != nil {
+	if err := run(*filename, os.Stdout, *skipPreview); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func run(fileName string, out io.Writer) error {
+func run(fileName string, out io.Writer, skipPreview bool) error {
 	// Read all the data from the input file and check for errors
 	input, err := os.ReadFile(fileName)
 	if err != nil {
@@ -55,7 +73,14 @@ func run(fileName string, out io.Writer) error {
 	}
 	outName := temp.Name()
 	fmt.Fprintln(out, outName)
-	return saveHTML(outName, htmlData)
+	if saveHTML(outName, htmlData); err != nil {
+		return err
+	}
+	if skipPreview {
+		return nil
+	}
+	defer os.Remove(outName)
+	return preview(outName)
 }
 
 func saveHTML(outName string, data []byte) error {
@@ -78,4 +103,32 @@ func parseContent(input []byte) []byte {
 	buffer.WriteString(footer)
 
 	return buffer.Bytes()
+}
+
+func preview(fname string) error {
+	cName := ""
+	cParams := []string{}
+	// Define executable based on OS
+	switch runtime.GOOS {
+	case "linux":
+		cName = "xdg-open"
+	case "windows":
+		cName = "cmd"
+	case "darwin":
+		cName = "open"
+	default:
+		return fmt.Errorf("unsupported platform")
+	}
+	// Append filename to params slice
+	cParams = append(cParams, fname)
+	// Locate executable in path
+	cPath, err := exec.LookPath(cName)
+	if err != nil {
+		return err
+	}
+	// open the file using default program
+	err = exec.Command(cPath, cParams...).Run()
+	// Give the browser some time to open the file before deleting
+	time.Sleep(2 * time.Second)
+	return err
 }
