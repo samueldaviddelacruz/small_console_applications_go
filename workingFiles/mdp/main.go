@@ -19,14 +19,15 @@ const (
 	defaultTemplate = `<!DOCTYPE html>
 	<html>
 	  <head>
-		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-		<title>{{.Title}}</title>
+			<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+			<title>{{.Title}}</title>
 	  </head>
 	  <body>
-	  {{.Body}}
+			{{.Body}}
+
+	
 	  </body>
-	</html>
-		`
+	</html>`
 )
 
 const (

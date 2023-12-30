@@ -35,7 +35,7 @@ func TestParseContent(t *testing.T) {
 }
 
 func TestRun(t *testing.T) {
-	t.Skip("skipping test for now, bytes do not match")
+
 	var mockStdout bytes.Buffer
 	err := run(inputFile, "", &mockStdout, true)
 	if err != nil {
@@ -56,5 +56,6 @@ func TestRun(t *testing.T) {
 		t.Logf("result:\n%s\n", result)
 		t.Error("result does not match golden filessss")
 	}
+	//t.Logf("result file: %s", resultFile)
 	os.Remove(resultFile)
 }
