@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"flag"
+	"fmt"
 	"io"
 	"os"
 )
@@ -13,8 +14,24 @@ func main() {
 	lines := flag.Bool("l", false, "count lines")
 	//defining a boolean flag -b to count bytes instead of words
 	bytes := flag.Bool("b", false, "count bytes")
+
+	//defining a files flag -files to read from multiple files instead of stdin
+	files := flag.Bool("files", false, "files to read from")
 	//parsing the flags provided by the user
 	flag.Parse()
+	if *files {
+		for _, file := range flag.Args() {
+			f, err := os.Open(file)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+			//calling the count function to count the number of words or lines
+			println(count(f, *lines, *bytes))
+		}
+		return
+	}
+
 	//calling the count function to count the number of words or lines
 	println(count(os.Stdin, *lines, *bytes))
 }
