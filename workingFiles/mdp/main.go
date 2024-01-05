@@ -38,14 +38,33 @@ type content struct {
 func main() {
 	// Parse flags
 	filename := flag.String("file", "", "Markdown file to preview")
+	markdownText := flag.String("text", "", "Markdown text to preview")
 	skipPreview := flag.Bool("s", false, "Skip opening the preview in the browser")
 	tFname := flag.String("t", "", "Alternate template file name")
 	flag.Parse()
 	// if user did not provide input file, show usage
 
-	if *filename == "" {
+	if *filename == "" && *markdownText == "" {
 		flag.Usage()
 		os.Exit(1)
+	}
+	if *markdownText != "" {
+		// if user provided markdown text, write to temp file
+		temp, err := os.CreateTemp("", "mdp*.md")
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		if _, err := temp.WriteString(*markdownText); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		if err := temp.Close(); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		*filename = temp.Name()
+		defer os.Remove(*filename)
 	}
 	if err := run(*filename, *tFname, os.Stdout, *skipPreview); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -95,6 +114,9 @@ func parseContent(input []byte, tFname string) ([]byte, error) {
 
 	// Create a new template and parse the default template
 	t, err := template.New("mdp").Parse(defaultTemplate)
+	if os.Getenv("DEFAULT_TEMPLATE") != "" {
+		t, err = template.New("mdp").Parse(os.Getenv("DEFAULT_TEMPLATE"))
+	}
 	if err != nil {
 		return nil, err
 	}
