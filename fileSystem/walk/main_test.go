@@ -104,6 +104,10 @@ func TestRunDelExtension(t *testing.T) {
 	}
 }
 
+func TestRunArchive(t *testing.T) {
+
+}
+
 func createTempDir(t *testing.T, files map[string]int) (dirname string, cleanup func()) {
 	t.Helper()
 	tempDir, err := os.MkdirTemp("", "walktest")
