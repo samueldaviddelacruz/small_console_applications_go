@@ -22,7 +22,7 @@ func avg(data []float64) float64 {
 	return sum(data) / float64(len(data))
 }
 
-func csv2Flat(r io.Reader, column int) ([]float64, error) {
+func csv2Float(r io.Reader, column int) ([]float64, error) {
 	// Create the CSV reader used to read in data from csv files
 	cr := csv.NewReader(r)
 	// Adjusting for 0 based index
@@ -51,6 +51,6 @@ func csv2Flat(r io.Reader, column int) ([]float64, error) {
 		}
 		data = append(data, v)
 	}
-	// return the slice of floag64 and nil error
+	// return the slice of float64 and nil error
 	return data, nil
 }
