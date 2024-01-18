@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 )
 
@@ -17,7 +18,7 @@ func main() {
 	}
 }
 
-func run(filenames []string, op string, column int, out *os.File) error {
+func run(filenames []string, op string, column int, out io.Writer) error {
 	var opFunc statsFunc
 	if len(filenames) == 0 {
 		return ErrNoFiles
