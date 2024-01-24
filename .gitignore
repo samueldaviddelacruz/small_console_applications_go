@@ -22,3 +22,20 @@ go.work
 
 #  intellij idea
 .idea
+fileSystem/walk/deleted_files.log
+fileSystem/walk/deleted_gomisc.log
+firstProgram/wc/test
+performance/colStats/benchresults00.txt
+performance/colStats/benchresults00m.txt
+performance/colStats/benchresults01m.txt
+performance/colStats/benchresults02m.txt
+performance/colStats/benchresults03m.txt
+performance/colStats/colStats
+performance/colStats/colStatsBenchmarkData.tar.gz
+performance/colStats/cpu00.pprof
+performance/colStats/cpu01.pprof
+performance/colStats/mem00.pprof
+workingFiles/mdp/README.md
+workingFiles/mdp/README.md.html
+workingFiles/mdp/template-fmt.html.tmpl
+performance/.DS_Store
