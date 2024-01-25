@@ -24,6 +24,8 @@ go.work
 .idea
 fileSystem/walk/deleted_files.log
 fileSystem/walk/deleted_gomisc.log
+
+#  misc
 firstProgram/wc/test
 performance/colStats/benchresults00.txt
 performance/colStats/benchresults00m.txt
