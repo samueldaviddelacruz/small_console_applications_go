@@ -16,12 +16,12 @@ var (
 )
 
 // HostsList is a list of hosts to run port scans on.
-type HostList struct {
+type HostsList struct {
 	Hosts []string
 }
 
 // search searches for hosts in the list
-func (hl *HostList) search(host string) (bool, int) {
+func (hl *HostsList) search(host string) (bool, int) {
 	sort.Strings(hl.Hosts)
 	i := sort.SearchStrings(hl.Hosts, host)
 	if i < len(hl.Hosts) && hl.Hosts[i] == host {
@@ -32,7 +32,7 @@ func (hl *HostList) search(host string) (bool, int) {
 }
 
 // Add adds a host to the list
-func (hl *HostList) Add(host string) error {
+func (hl *HostsList) Add(host string) error {
 	if found, _ := hl.search(host); found {
 		return fmt.Errorf("%w: %s", ErrExists, host)
 	}
@@ -40,8 +40,8 @@ func (hl *HostList) Add(host string) error {
 	return nil
 }
 
-// Delete removes a host from the list
-func (hl *HostList) Delete(host string) error {
+// Remove removes a host from the list
+func (hl *HostsList) Remove(host string) error {
 	if found, i := hl.search(host); found {
 		hl.Hosts = append(hl.Hosts[:i], hl.Hosts[i+1:]...)
 		return nil
@@ -50,7 +50,7 @@ func (hl *HostList) Delete(host string) error {
 }
 
 // Load obtains hosts from a hosts file
-func (hl *HostList) Load(hostsFile string) error {
+func (hl *HostsList) Load(hostsFile string) error {
 	f, err := os.Open(hostsFile)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -67,7 +67,7 @@ func (hl *HostList) Load(hostsFile string) error {
 }
 
 // Save saves hosts to a hosts file
-func (hl *HostList) Save(hostsFile string) error {
+func (hl *HostsList) Save(hostsFile string) error {
 	output := ""
 
 	for _, h := range hl.Hosts {
