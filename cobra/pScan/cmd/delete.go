@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"small_console_applications_go/cobra/pScan/scan"
 
@@ -27,7 +28,7 @@ var deleteCmd = &cobra.Command{
 	},
 }
 
-func deleteAction(out *os.File, hostsFile string, args []string) error {
+func deleteAction(out io.Writer, hostsFile string, args []string) error {
 	hl := &scan.HostsList{}
 	if err := hl.Load(hostsFile); err != nil {
 		return err
