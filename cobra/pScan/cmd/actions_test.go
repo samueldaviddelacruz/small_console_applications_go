@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"small_console_applications_go/cobra/pScan/scan"
+	"strings"
 	"testing"
 )
 
@@ -75,5 +77,48 @@ func TestHostActions(t *testing.T) {
 		if out.String() != tc.expectedOut {
 			t.Errorf("Expected output %q, but got %q\n", tc.expectedOut, out.String())
 		}
+	}
+}
+
+func TestIntegration(t *testing.T) {
+	// Define hosts for integration test
+	hosts := []string{"host1", "host2", "host3"}
+	// Setup integration test
+	tf, cleanup := setup(t, hosts, false)
+	defer cleanup()
+	delHost := "host2"
+	hostsEnd := []string{"host1", "host3"}
+	// Define var to capture output
+	var out bytes.Buffer
+	// Define expected output for all actions
+	expectedOut := ""
+	for _, v := range hosts {
+		expectedOut += fmt.Sprintf("Added host: %s\n", v)
+	}
+	expectedOut += strings.Join(hosts, "\n")
+	expectedOut += fmt.Sprintln()
+	expectedOut += fmt.Sprintf("Deleted host: %s\n", delHost)
+	expectedOut += strings.Join(hostsEnd, "\n")
+	expectedOut += fmt.Sprintln()
+	// Add hosts to the list
+	if err := addAction(&out, tf, hosts); err != nil {
+		t.Fatalf("Expected no error, but got %q\n", err)
+	}
+	// List hosts
+	if err := listAction(&out, tf, nil); err != nil {
+		t.Fatalf("Expected no error, but got %q\n", err)
+	}
+	// Delete host2 from the list
+	if err := deleteAction(&out, tf, []string{delHost}); err != nil {
+		t.Fatalf("Expected no error, but got %q\n", err)
+	}
+	// List hosts after delete
+	if err := listAction(&out, tf, nil); err != nil {
+		t.Fatalf("Expected no error, but got %q\n", err)
+	}
+
+	// Check if the output is as expected
+	if out.String() != expectedOut {
+		t.Errorf("Expected output %q, but got %q\n", expectedOut, out.String())
 	}
 }
