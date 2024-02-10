@@ -44,7 +44,7 @@ type Results struct {
 
 // Run performs a port scan on the hosts list
 func Run(hl *HostsList, ports []int) []Results {
-	res := make([]Results, len(hl.Hosts))
+	res := make([]Results, 0, len(hl.Hosts))
 	for _, h := range hl.Hosts {
 		r := Results{Host: h}
 		if _, err := net.LookupHost(h); err != nil {
