@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"small_console_applications_go/cobra/pScan/scan"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -100,6 +102,10 @@ func TestIntegration(t *testing.T) {
 	expectedOut += fmt.Sprintf("Deleted host: %s\n", delHost)
 	expectedOut += strings.Join(hostsEnd, "\n")
 	expectedOut += fmt.Sprintln()
+	for _, v := range hostsEnd {
+		expectedOut += fmt.Sprintf("%s: Host not found\n", v)
+		expectedOut += fmt.Sprintln()
+	}
 	// Add hosts to the list
 	if err := addAction(&out, tf, hosts); err != nil {
 		t.Fatalf("Expected no error, but got %q\n", err)
@@ -116,9 +122,55 @@ func TestIntegration(t *testing.T) {
 	if err := listAction(&out, tf, nil); err != nil {
 		t.Fatalf("Expected no error, but got %q\n", err)
 	}
+	// Scan hosts
+	if err := scanAction(&out, tf, nil); err != nil {
+		t.Fatalf("Expected no error, but got %q\n", err)
+	}
 
 	// Check if the output is as expected
 	if out.String() != expectedOut {
 		t.Errorf("Expected output %q, but got %q\n", expectedOut, out.String())
+	}
+}
+
+func TestScanAction(t *testing.T) {
+	//define hosts for scan test
+	hosts := []string{"localhost", "unknown"}
+	// Setup scan test
+	tf, cleanup := setup(t, hosts, true)
+	defer cleanup()
+	ports := []int{}
+	for i := 0; i < 2; i++ {
+		ln, err := net.Listen("tcp", net.JoinHostPort("localhost", "0"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer ln.Close()
+		_, portStr, err := net.SplitHostPort(ln.Addr().String())
+		if err != nil {
+			t.Fatal(err)
+		}
+		port, err := strconv.Atoi(portStr)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ports = append(ports, port)
+		if i == 1 {
+			ln.Close()
+		}
+	}
+	// Define var to capture output
+	expectedOut := fmt.Sprintln("localhost:")
+	expectedOut += fmt.Sprintf("\t%d: open\n", ports[0])
+	expectedOut += fmt.Sprintf("\t%d: closed\n", ports[1])
+	expectedOut += fmt.Sprintln()
+	expectedOut += fmt.Sprintln("unknown: Host not found")
+	expectedOut += fmt.Sprintln()
+
+	// Define var to capture scan output
+	var out bytes.Buffer
+	//execute scan and capture output
+	if err := scanAction(&out, tf, ports); err != nil {
+		t.Fatalf("Expected no error, but got %q\n", err)
 	}
 }
