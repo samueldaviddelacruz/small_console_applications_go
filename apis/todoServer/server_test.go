@@ -1,18 +1,51 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"small_console_applications_go/interacting/todo"
 	"strings"
 	"testing"
 )
 
 func setupAPI(t *testing.T) (string, func()) {
 	t.Helper()
-	ts := httptest.NewServer(newMux(""))
+	tempTodoFile, err := os.CreateTemp("", "todotest")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(newMux(tempTodoFile.Name()))
+
+	// add a few items for testing
+	for i := 1; i < 3; i++ {
+		var body bytes.Buffer
+		taskName := fmt.Sprintf("Task number %d.", i)
+		item := struct {
+			Task string `json:"task"`
+		}{
+			Task: taskName,
+		}
+		if err := json.NewEncoder(&body).Encode(item); err != nil {
+			t.Fatal(err)
+		}
+
+		r, err := http.Post(ts.URL+"/todo", "application/json", &body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if r.StatusCode != http.StatusCreated {
+			t.Fatalf("Failed to add initial items: Status: %d", r.StatusCode)
+		}
+	}
+
 	return ts.URL, func() {
 		ts.Close()
+		os.Remove(tempTodoFile.Name())
 	}
 }
 func TestGet(t *testing.T) {
@@ -27,14 +60,26 @@ func TestGet(t *testing.T) {
 			name: "GetRoot", path: "/", expCode: http.StatusOK, expContent: "There's an API here",
 		},
 		{
+			name: "GetAll", path: "/todo", expCode: http.StatusOK, expItems: 2, expContent: "Task number 1.",
+		},
+		{
+			name: "GetOne", path: "/todo/1", expCode: http.StatusOK, expItems: 1, expContent: "Task number 1.",
+		},
+		{
 			name: "NotFound", path: "/todo/500", expCode: http.StatusNotFound,
 		},
 	}
 	url, cleanup := setupAPI(t)
+
 	defer cleanup()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			var (
+				resp struct {
+					Results      todo.List `json:"results"`
+					Date         int64     `json:"date"`
+					TotalResults int       `json:"total_results"`
+				}
 				body []byte
 				err  error
 			)
@@ -47,6 +92,16 @@ func TestGet(t *testing.T) {
 				t.Fatalf("expected %q, got %q", http.StatusText(tc.expCode), http.StatusText(r.StatusCode))
 			}
 			switch {
+			case strings.Contains(r.Header.Get("Content-Type"), "application/json"):
+				if err = json.NewDecoder(r.Body).Decode(&resp); err != nil {
+					t.Error(err)
+				}
+				if resp.TotalResults != tc.expItems {
+					t.Errorf("Expected %d items, got %d", tc.expItems, resp.TotalResults)
+				}
+				if resp.Results[0].Task != tc.expContent {
+					t.Errorf("Expected %q, got %q", tc.expContent, resp.Results[0].Task)
+				}
 			case strings.Contains(r.Header.Get("Content-Type"), "text/plain"):
 				if body, err = io.ReadAll(r.Body); err != nil {
 					t.Error(err)
@@ -59,4 +114,44 @@ func TestGet(t *testing.T) {
 			}
 		})
 	}
+}
+func TestAdd(t *testing.T) {
+	url, cleanup := setupAPI(t)
+	defer cleanup()
+	taskName := "Task number 3."
+	t.Run("Add", func(t *testing.T) {
+		var body bytes.Buffer
+		item := struct {
+			Task string `json:"task"`
+		}{
+			Task: taskName,
+		}
+		if err := json.NewEncoder(&body).Encode(item); err != nil {
+			t.Fatal(err)
+		}
+		r, err := http.Post(url+"/todo", "application/json", &body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if r.StatusCode != http.StatusCreated {
+			t.Errorf("Expected %q, got %q", http.StatusText(http.StatusCreated), http.StatusText(r.StatusCode))
+		}
+	})
+	t.Run("CheckAdd", func(t *testing.T) {
+		r, err := http.Get(url + "/todo/3")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if r.StatusCode != http.StatusOK {
+			t.Fatalf("Expected %q, got %q", http.StatusText(http.StatusOK), http.StatusText(r.StatusCode))
+		}
+		var resp todoResponse
+		if err := json.NewDecoder(r.Body).Decode(&resp); err != nil {
+			t.Fatal(err)
+		}
+		r.Body.Close()
+		if resp.Results[0].Task != taskName {
+			t.Errorf("Expected %q, got %q", taskName, resp.Results[0].Task)
+		}
+	})
 }
