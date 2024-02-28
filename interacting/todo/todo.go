@@ -83,7 +83,7 @@ func (l *List) Complete(i int) error {
 }
 func (l *List) Delete(i int) error {
 	ls := *l
-	if i < 0 || i >= len(ls) {
+	if i <= 0 || i > len(ls) {
 		return fmt.Errorf("item %d does not exist", i)
 	}
 	// Adjust the index to account for 0-indexing
