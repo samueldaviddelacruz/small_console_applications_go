@@ -86,4 +86,63 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("view task failed. stopping integration tests")
 	}
 
+	t.Run("CompleteTask", func(t *testing.T) {
+		var out bytes.Buffer
+		if err := completeAction(&out, apiRoot, taskId); err != nil {
+			t.Fatalf("expected no error, got %q.", err)
+		}
+		expOut := fmt.Sprintf("Item number %s marked as completed.\n", taskId)
+		if expOut != out.String() {
+			t.Errorf("expected %q, got %q.", expOut, out.String())
+		}
+	})
+
+	t.Run("ListCompletedTask", func(t *testing.T) {
+		var out bytes.Buffer
+		if err := listAction(&out, apiRoot); err != nil {
+			t.Fatalf("expected no error, got %q.", err)
+		}
+		outList := ""
+		scanner := bufio.NewScanner(&out)
+		for scanner.Scan() {
+			if strings.Contains(scanner.Text(), task) {
+				outList = scanner.Text()
+				break
+			}
+		}
+		if outList == "" {
+			t.Errorf("Task %q not in the list", task)
+		}
+		taskCompleteStatus := strings.Fields(outList)[0]
+		if taskCompleteStatus != "X" {
+			t.Errorf("expected status %q, got %q", "-", taskCompleteStatus)
+		}
+	})
+
+	t.Run("DeleteTask", func(t *testing.T) {
+		var out bytes.Buffer
+		if err := delAction(&out, apiRoot, taskId); err != nil {
+			t.Fatalf("expected no error, got %q.", err)
+		}
+		expOut := fmt.Sprintf("Item number %s deleted.\n", taskId)
+		if expOut != out.String() {
+			t.Errorf("expected %q, got %q.", expOut, out.String())
+		}
+	})
+
+	t.Run("ListDeletedTask", func(t *testing.T) {
+		var out bytes.Buffer
+		if err := listAction(&out, apiRoot); err != nil {
+			t.Fatalf("expected no error, got %q.", err)
+		}
+
+		scanner := bufio.NewScanner(&out)
+		for scanner.Scan() {
+			if strings.Contains(scanner.Text(), task) {
+				t.Errorf("Task %q still in the list", task)
+				break
+			}
+		}
+	})
+
 }
