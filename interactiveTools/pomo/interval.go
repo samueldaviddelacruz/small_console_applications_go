@@ -3,6 +3,7 @@ package pomodoro
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -23,7 +24,7 @@ const (
 )
 
 var (
-	ErrNotIntervals       = errors.New("no intervals")
+	ErrNoIntervals        = errors.New("no intervals")
 	ErrIntervalNotRunning = errors.New("interval not running")
 	ErrIntervalCompleted  = errors.New("interval is completed or cancelled")
 	ErrInvalidState       = errors.New("invalid state")
@@ -75,9 +76,30 @@ func NewConfig(repo Repository, pomodoro, shortBreak, longBreak time.Duration) *
 	return c
 }
 
+func newInterval(config *IntervalConfig) (Interval, error) {
+	i := Interval{}
+	category, err := nextCategory(config.repo)
+	if err != nil {
+		return i, err
+	}
+	i.Category = category
+	switch category {
+	case CategoryPomodoro:
+		i.PlannedDuration = config.PomodoroDuration
+	case CategoryShortBreak:
+		i.PlannedDuration = config.ShortBreakDuration
+	case CategoryLongBreak:
+		i.PlannedDuration = config.LongBreakDuration
+	}
+	if i.ID, err = config.repo.Create(i); err != nil {
+		return i, err
+	}
+	return i, nil
+}
+
 func nextCategory(r Repository) (string, error) {
 	li, err := r.Last()
-	if err != nil && err == ErrNotIntervals {
+	if err != nil && err == ErrNoIntervals {
 		return CategoryPomodoro, nil
 	}
 	if err != nil {
@@ -143,4 +165,42 @@ func tick(ctx context.Context, id int64, config *IntervalConfig, start, periodic
 		}
 
 	}
+}
+
+func GetInterval(config *IntervalConfig) (Interval, error) {
+	i, err := config.repo.Last()
+	if err != nil && err != ErrNoIntervals {
+		return i, err
+	}
+	if err == nil && i.State != StateCancelled && i.State != StateDone {
+		return i, nil
+	}
+	return newInterval(config)
+}
+
+func (i Interval) Start(ctx context.Context, id int64, config *IntervalConfig, start, periodic, end Callback) error {
+	switch i.State {
+	case StateRunning:
+		return nil
+	case StateNotStarted:
+		i.StartTime = time.Now()
+		fallthrough
+	case StatePaused:
+		i.State = StateRunning
+		if err := config.repo.Update(i); err != nil {
+			return err
+		}
+		return tick(ctx, id, config, start, periodic, end)
+	case StateCancelled, StateDone:
+		return fmt.Errorf("%w: Cannot start", ErrIntervalCompleted)
+	default:
+		return fmt.Errorf("%w: %d", ErrInvalidState, i.State)
+	}
+}
+func (i Interval) Pause(config *IntervalConfig) error {
+	if i.State != StateRunning {
+		return ErrIntervalNotRunning
+	}
+	i.State = StatePaused
+	return config.repo.Update(i)
 }
