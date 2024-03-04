@@ -178,7 +178,7 @@ func GetInterval(config *IntervalConfig) (Interval, error) {
 	return newInterval(config)
 }
 
-func (i Interval) Start(ctx context.Context, id int64, config *IntervalConfig, start, periodic, end Callback) error {
+func (i Interval) Start(ctx context.Context, config *IntervalConfig, start, periodic, end Callback) error {
 	switch i.State {
 	case StateRunning:
 		return nil
@@ -190,7 +190,7 @@ func (i Interval) Start(ctx context.Context, id int64, config *IntervalConfig, s
 		if err := config.repo.Update(i); err != nil {
 			return err
 		}
-		return tick(ctx, id, config, start, periodic, end)
+		return tick(ctx, i.ID, config, start, periodic, end)
 	case StateCancelled, StateDone:
 		return fmt.Errorf("%w: Cannot start", ErrIntervalCompleted)
 	default:
