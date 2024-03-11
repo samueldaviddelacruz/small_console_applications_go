@@ -8,19 +8,26 @@ import (
 	"github.com/mum4k/termdash/terminal/terminalapi"
 )
 
-func newGrid(b *buttonSet, w *widgets, t terminalapi.Terminal) (*container.Container, error) {
+func newGrid(b *buttonSet, w *widgets,
+	t terminalapi.Terminal) (*container.Container, error) {
+
 	builder := grid.New()
+
 	// Add first row
 	builder.Add(
 		grid.RowHeightPerc(30,
-			grid.ColWidthPercWithOpts(30, []container.Option{
-				container.Border(linestyle.Light),
-				container.BorderTitle("Press Q to Quit"),
-			},
-				grid.RowHeightPerc(80, grid.Widget(w.donTimer)),
-				grid.RowHeightPercWithOpts(20, []container.Option{
-					container.AlignHorizontal(align.HorizontalCenter),
+			grid.ColWidthPercWithOpts(30,
+				[]container.Option{
+					container.Border(linestyle.Light),
+					container.BorderTitle("Press Q to Quit"),
 				},
+				// Add inside row
+				grid.RowHeightPerc(80,
+					grid.Widget(w.donTimer)),
+				grid.RowHeightPercWithOpts(20,
+					[]container.Option{
+						container.AlignHorizontal(align.HorizontalCenter),
+					},
 					grid.Widget(w.txtTimer,
 						container.AlignHorizontal(align.HorizontalCenter),
 						container.AlignVertical(align.VerticalMiddle),
@@ -30,13 +37,16 @@ func newGrid(b *buttonSet, w *widgets, t terminalapi.Terminal) (*container.Conta
 			),
 			grid.ColWidthPerc(70,
 				grid.RowHeightPerc(80,
-					grid.Widget(w.disType, container.Border(linestyle.Light))),
+					grid.Widget(w.disType, container.Border(linestyle.Light)),
+				),
+				grid.RowHeightPerc(20,
+					grid.Widget(w.txtInfo, container.Border(linestyle.Light)),
+				),
 			),
-			grid.RowHeightPerc(20,
-				grid.Widget(w.txtInfo, container.Border(linestyle.Light))),
 		),
 	)
-	// add second row
+
+	// Add second row
 	builder.Add(
 		grid.RowHeightPerc(10,
 			grid.ColWidthPerc(50,
@@ -47,10 +57,12 @@ func newGrid(b *buttonSet, w *widgets, t terminalapi.Terminal) (*container.Conta
 			),
 		),
 	)
-	// add third row
+
+	// Add third row
 	builder.Add(
 		grid.RowHeightPerc(60),
 	)
+
 	gridOpts, err := builder.Build()
 	if err != nil {
 		return nil, err

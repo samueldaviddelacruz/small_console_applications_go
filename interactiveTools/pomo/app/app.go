@@ -22,11 +22,13 @@ type App struct {
 
 func New(config *pomodoro.IntervalConfig) (*App, error) {
 	ctx, cancel := context.WithCancel(context.Background())
+
 	quitter := func(k *terminalapi.Keyboard) {
 		if k.Key == 'q' || k.Key == 'Q' {
 			cancel()
 		}
 	}
+
 	redrawCh := make(chan bool)
 	errorCh := make(chan error)
 
@@ -49,10 +51,13 @@ func New(config *pomodoro.IntervalConfig) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	controller, err := termdash.NewController(term, c, termdash.KeyboardSubscriber(quitter))
+
+	controller, err := termdash.NewController(term, c,
+		termdash.KeyboardSubscriber(quitter))
 	if err != nil {
 		return nil, err
 	}
+
 	return &App{
 		ctx:        ctx,
 		controller: controller,
@@ -62,22 +67,26 @@ func New(config *pomodoro.IntervalConfig) (*App, error) {
 	}, nil
 }
 
-func (a *App) Resize() error {
+func (a *App) resize() error {
 	if a.size.Eq(a.term.Size()) {
 		return nil
 	}
+
 	a.size = a.term.Size()
 	if err := a.term.Clear(); err != nil {
 		return err
 	}
+
 	return a.controller.Redraw()
 }
 
 func (a *App) Run() error {
 	defer a.term.Close()
 	defer a.controller.Close()
+
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
+
 	for {
 		select {
 		case <-a.redrawCh:
@@ -91,7 +100,7 @@ func (a *App) Run() error {
 		case <-a.ctx.Done():
 			return nil
 		case <-ticker.C:
-			if err := a.Resize(); err != nil {
+			if err := a.resize(); err != nil {
 				return err
 			}
 		}
