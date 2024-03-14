@@ -30,7 +30,7 @@ type dbRepo struct {
 }
 
 func NewSQlite3Repo(dbfile string) (*dbRepo, error) {
-	db, err := sql.Open("sqlite3", dbfile)
+	db, err := sql.Open("sqlite", dbfile)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (r *dbRepo) Create(i pomodoro.Interval) (int64, error) {
 func (r *dbRepo) Update(i pomodoro.Interval) error {
 	r.Lock()
 	defer r.Unlock()
-	updStmt, err := r.db.Prepare("UPDATE interva SET start_time=?, actual_duration=?, state=? WHERE id=?")
+	updStmt, err := r.db.Prepare("UPDATE interval SET start_time=?, actual_duration=?, state=? WHERE id=?")
 	if err != nil {
 		return err
 	}
