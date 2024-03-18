@@ -24,23 +24,32 @@ func (s *summary) update(redrawCh chan<- bool) {
 	redrawCh <- true
 }
 
-func newSummary(ctx context.Context, config *pomodoro.IntervalConfig, redrawCh chan<- bool, errorCh chan<- error) (*summary, error) {
+func newSummary(ctx context.Context, config *pomodoro.IntervalConfig,
+	redrawCh chan<- bool, errorCh chan<- error) (*summary, error) {
+
 	s := &summary{}
 	var err error
+
 	s.updateDaily = make(chan bool)
 	s.updateWeekly = make(chan bool)
-	s.bcDay, err = newBarchart(ctx, config, s.updateDaily, errorCh)
+
+	s.bcDay, err = newBarChart(ctx, config, s.updateDaily, errorCh)
 	if err != nil {
 		return nil, err
 	}
-	s.lcWeekly, err = newLinechart(ctx, config, s.updateWeekly, errorCh)
+
+	s.lcWeekly, err = newLineChart(ctx, config, s.updateWeekly, errorCh)
 	if err != nil {
 		return nil, err
 	}
+
 	return s, nil
 }
-func newBarchart(ctx context.Context, config *pomodoro.IntervalConfig, update <-chan bool, errorCh chan<- error) (*barchart.BarChart, error) {
-	// Init BarChart
+
+func newBarChart(ctx context.Context, config *pomodoro.IntervalConfig,
+	update <-chan bool, errorCh chan<- error) (*barchart.BarChart, error) {
+
+	// Initialize BarChart
 	bc, err := barchart.New(
 		barchart.ShowValues(),
 		barchart.BarColors([]cell.Color{
@@ -52,7 +61,7 @@ func newBarchart(ctx context.Context, config *pomodoro.IntervalConfig, update <-
 			cell.ColorBlack,
 		}),
 		barchart.Labels([]string{
-			"Pomodor",
+			"Pomodoro",
 			"Break",
 		}),
 	)
@@ -60,21 +69,22 @@ func newBarchart(ctx context.Context, config *pomodoro.IntervalConfig, update <-
 		return nil, err
 	}
 
-	// update func for BarChart
+	// Update function for BarChart
 	updateWidget := func() error {
 		ds, err := pomodoro.DailySummary(time.Now(), config)
 		if err != nil {
 			return err
 		}
+
 		return bc.Values(
-			[]int{
-				int(ds[0].Minutes()),
-				int(ds[1].Minutes()),
-			},
-			int(math.Max(ds[0].Minutes(), ds[1].Minutes())*1.1)+1,
+			[]int{int(ds[0].Minutes()),
+				int(ds[1].Minutes())},
+			int(math.Max(ds[0].Minutes(),
+				ds[1].Minutes())*1.1)+1,
 		)
 	}
-	// update goroutine for BarChart
+
+	// Update goroutine for BarChart
 	go func() {
 		for {
 			select {
@@ -85,42 +95,52 @@ func newBarchart(ctx context.Context, config *pomodoro.IntervalConfig, update <-
 			}
 		}
 	}()
-	// Force Update Barchart at start
+
+	// Force Update BarChart at start
 	if err := updateWidget(); err != nil {
 		return nil, err
 	}
+
 	return bc, nil
 }
 
-func newLinechart(ctx context.Context, config *pomodoro.IntervalConfig, update <-chan bool, errorCh chan<- error) (*linechart.LineChart, error) {
-	// Init Linechart
+func newLineChart(ctx context.Context, config *pomodoro.IntervalConfig,
+	update <-chan bool, errorCh chan<- error) (*linechart.LineChart, error) {
+
+	// Initialize LineChart
 	lc, err := linechart.New(
 		linechart.AxesCellOpts(cell.FgColor(cell.ColorRed)),
 		linechart.YLabelCellOpts(cell.FgColor(cell.ColorBlue)),
 		linechart.XLabelCellOpts(cell.FgColor(cell.ColorCyan)),
-		linechart.YAxisFormattedValues(linechart.ValueFormatterSingleUnitDuration(time.Second, 0)),
+		linechart.YAxisFormattedValues(
+			linechart.ValueFormatterSingleUnitDuration(time.Second, 0),
+		),
 	)
 	if err != nil {
 		return nil, err
 	}
-	// update function for LineChart
+
+	// Update function for LineChart
 	updateWidget := func() error {
 		ws, err := pomodoro.RangeSummary(time.Now(), 7, config)
 		if err != nil {
 			return err
 		}
-		err = lc.Series(ws[0].Name, ws[0].Values, linechart.SeriesCellOpts(cell.FgColor(cell.ColorBlue)),
+
+		err = lc.Series(ws[0].Name, ws[0].Values,
+			linechart.SeriesCellOpts(cell.FgColor(cell.ColorBlue)),
 			linechart.SeriesXLabels(ws[0].Labels),
 		)
 		if err != nil {
 			return err
 		}
-		return lc.Series(
-			ws[1].Name, ws[1].Values,
+
+		return lc.Series(ws[1].Name, ws[1].Values,
 			linechart.SeriesCellOpts(cell.FgColor(cell.ColorYellow)),
 			linechart.SeriesXLabels(ws[1].Labels),
 		)
 	}
+
 	// Update goroutine for LineChart
 	go func() {
 		for {
@@ -132,9 +152,11 @@ func newLinechart(ctx context.Context, config *pomodoro.IntervalConfig, update <
 			}
 		}
 	}()
-	// Force update Linechart at start
+
+	// Force Update LineChart at start
 	if err := updateWidget(); err != nil {
 		return nil, err
 	}
+
 	return lc, nil
 }

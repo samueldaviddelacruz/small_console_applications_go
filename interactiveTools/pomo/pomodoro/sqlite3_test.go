@@ -17,7 +17,7 @@ func getRepo(t *testing.T) (pomodoro.Repository, func()) {
 		t.Fatal(err)
 	}
 	tf.Close()
-	dbRepo, err := repository.NewSQlite3Repo(tf.Name())
+	dbRepo, err := repository.NewSQLite3Repo(tf.Name())
 	if err != nil {
 		t.Fatal(err)
 	}

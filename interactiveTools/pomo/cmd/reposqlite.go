@@ -11,7 +11,7 @@ import (
 )
 
 func getRepo() (pomodoro.Repository, error) {
-	repo, err := repository.NewSQlite3Repo(viper.GetString("db"))
+	repo, err := repository.NewSQLite3Repo(viper.GetString("db"))
 	if err != nil {
 		return nil, err
 	}
