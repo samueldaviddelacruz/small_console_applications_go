@@ -6,8 +6,9 @@ require (
 	github.com/mum4k/termdash v0.19.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
+	small_console_applications_go/distributing/notify v0.0.0
 )
-
+replace small_console_applications_go/distributing/notify => ../../distributing/notify
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
